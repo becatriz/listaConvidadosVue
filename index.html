@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css" />
+  <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" />
+  <title>Lista de Convidados Vue</title>
+</head>
+
+<body>
+
+  <div id="app">
+    <b-container>
+      <h1>{{ title }}</h1>
+      <template>
+        <div id="alert">
+          <b-alert v-for="(item, index) in arrayAlerta " variant="danger" dismissible fade :show="exibeAlert"
+            @dismissed="exibeAlert=false">
+            {{arrayAlerta[index]}}
+        </div>
+      </template>
+      <form>
+        <b-form-group label="Nome" label-for="nome">
+          <b-form-input id=nome v-model="convidado.nome" type="text" required placeholder="Ex: Maria da Silva">
+          </b-form-input>
+        </b-form-group>
+        <b-form-group label="Idade" label-for="idade">
+          <b-form-input id=idade v-model="convidado.idade" type="number" required>
+          </b-form-input>
+        </b-form-group>
+        <b-form-group label="Email" label-for="email">
+          <b-form-input id=email v-model="convidado.email" type="email" required placeholder="maria@gmail.com">
+          </b-form-input>
+        </b-form-group>
+        <b-form-group label="CEP" label-for="cep">
+          <b-form-input v-mask="'##.###-###'" id=cep v-model="convidado.cep" type="text" required
+            placeholder="99.999-999">
+          </b-form-input>
+        </b-form-group>
+      </form>
+      <b-button @click="salvar" variant="outline-primary">Salvar</b-button>
+      <div>
+        <b-table striped hover :items="listaConvidados" :fields="fields">
+          <template v-slot:cell(acoes)="row">
+            <b-btn @click="editar(row.index)" variant="success">Editar</b-btn>
+            <b-btn @click="confirmarRemocao(row.index)" variant="outline-danger">Excluir</b-btn>
+          </template>
+        </b-table>
+      </div>
+    </b-container>
+
+    <b-modal v-model="exibirModalExclusao" title="Confirmar ação" centered>
+      <p>Tem certeza que deseja excluir?</p>
+      <template v-slot:modal-footer="{ cancel }">
+        <b-btn @click="excluir" variant="outline-danger">Excluir</b-btn>
+        <b-btn @click="cancel" variant="primary">Cancela</b-btn>
+      </template>
+    </b-modal>
+  </div>
+
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es2015%2CIntersectionObserver"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+  <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/v-mask/dist/v-mask.min.js"></script>
+
+
+
+  <script>
+
+    Vue.use(VueMask.VueMaskPlugin)
+
+    let app = new Vue({
+      el: '#app',
+      data: {
+        exibirModalExclusao: false,
+        controleFormEditando: false,
+        index: 0,
+        arrayAlerta: [],
+        title: 'Lista de Convidados Vue',
+        fields: [
+          {
+            label: 'Nome',
+            key: 'nome',
+            sortable: true
+          },
+          {
+            label: 'Idade',
+            key: 'idade',
+            sortable: true
+          },
+          {
+            label: 'Email',
+            key: 'email',
+            sortable: false
+          },
+          {
+            label: 'CEP',
+            key: 'cep',
+            sortable: false
+          },
+          {
+            label: 'Ações',
+            key: 'acoes',
+            sortable: false
+          },
+        ],
+        listaConvidados: [],
+        convidado: {
+          endereco: {}
+        }
+      },
+      methods: {
+        salvar() {
+          this.validarCampos()
+          this.verificarConvidadosRepetidosNaLista()
+          
+          if(this.arrayAlerta.length > 0 && !this.controleFormEditando){
+            this.exibeAlert = true
+            return
+          }
+          
+          if (this.controleFormEditando) {
+            this.listaConvidados.splice(this.index, 1, this.convidado)
+            this.controleFormEditando = false
+          } else {
+            this.listaConvidados.push(this.convidado)
+          }
+          this.limpar()
+
+        },
+        limpar() {
+          this.convidado = { endereco: {} }
+        },
+        editar(index) {
+          this.index = index
+          this.convidado = JSON.parse(JSON.stringify(this.listaConvidados[index]))
+          this.controleFormEditando = true
+        },
+        excluir() {
+          this.listaConvidados.splice(this.index, 1)
+          this.exibirModalExclusao = false
+        },
+        confirmarRemocao(index) {
+          this.index = index
+          this.exibirModalExclusao = true
+        },
+        validarCampos() {
+          this.arrayAlerta = []
+
+          if (this.convidado.nome === undefined || this.convidado.nome === "") {
+            this.arrayAlerta.push("Preencher nome do convidado")
+          }
+          if (this.convidado.idade === undefined || this.convidado.idade === "") {
+            this.arrayAlerta.push("Preencher idade do convidado")
+
+          }
+          if (this.convidado.email === undefined || this.convidado.email === "") {
+            this.arrayAlerta.push("Preencher email do convidado")
+
+          }
+          if (this.convidado.cep === undefined || this.convidado.cep === "") {
+            this.arrayAlerta.push("Preencher CEP")
+
+          }
+        },
+        verificarConvidadosRepetidosNaLista(){
+          let nomesRepetidosNaLista = this.listaConvidados.filter( element => element.nome === this.convidado.nome)
+          if(nomesRepetidosNaLista.length > 0){
+            this.arrayAlerta.push("Convidado já cadastrado anteriomente") 
+          }     
+        }
+      },
+    })
+  </script>
+</body>
+
+</html>
