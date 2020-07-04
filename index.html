@@ -21,34 +21,65 @@
             {{arrayAlerta[index]}}
         </div>
       </template>
-      <form>
-        <b-form-group label="Nome" label-for="nome">
-          <b-form-input id=nome v-model="convidado.nome" type="text" required placeholder="Ex: Maria da Silva">
-          </b-form-input>
-        </b-form-group>
-        <b-form-group label="Idade" label-for="idade">
-          <b-form-input id=idade v-model="convidado.idade" type="number" required>
-          </b-form-input>
-        </b-form-group>
-        <b-form-group label="Email" label-for="email">
-          <b-form-input id=email v-model="convidado.email" type="email" required placeholder="maria@gmail.com">
-          </b-form-input>
-        </b-form-group>
-        <b-form-group label="CEP" label-for="cep">
-          <b-form-input v-mask="'##.###-###'" id=cep v-model="convidado.cep" type="text" required
-            placeholder="99.999-999">
-          </b-form-input>
-        </b-form-group>
-      </form>
-      <b-button @click="salvar" variant="outline-primary">Salvar</b-button>
-      <div>
+      <b-card class="mb-3">
+        <form>
+          <b-row>
+            <b-col cols="12" lg="4" md="6">
+              <b-form-group label="Nome" label-for="nome">
+                <b-form-input id=nome v-model="convidado.nome" type="text" required placeholder="Ex: Maria da Silva">
+                </b-form-input>
+              </b-form-group>
+            </b-col>
+            <b-col cols="12" lg="4" md="6">
+              <b-form-group label="Idade" label-for="idade">
+                <b-form-input id=idade v-model="convidado.idade" type="number" required>
+                </b-form-input>
+              </b-form-group>
+            </b-col>
+            <b-col cols="12" lg="4" md="6">
+              <b-form-group label="Email" label-for="email">
+                <b-form-input id=email v-model="convidado.email" type="email" required placeholder="maria@gmail.com">
+                </b-form-input>
+              </b-form-group>
+            </b-col>
+            <b-col cols="12" lg="4" md="6">
+              <b-form-group label="CEP" label-for="cep">
+                <b-form-input v-mask="'##.###-###'" id=cep v-model="convidado.cep" type="text" required
+                  placeholder="99.999-999">
+                </b-form-input>
+              </b-form-group>
+            </b-col>
+          </b-row>
+        </form>
+        <b-row align-h="end" >
+          <b-col cols="auto" >
+            <b-button variant="outline-danger" @click="limpar" variant="primary">Cancelar</b-button>
+          </b-col>
+          <b-col cols="auto">
+            <b-button @click="salvar" variant="primary">Salvar</b-button>
+          </b-col>
+        </b-row>
+      </b-card>
+
+      <b-card>
+        <b-row>
+          <b-col cols="12" md="6">
+            <b-form-group>
+              <b-form-input v-model="textoBusca" type="text" placeholder="Buscar por nome"></b-form-input>
+            </b-form-group>
+          </b-col>
+            <b-col col="auto">
+        <b-button @click="buscar" variant="primary">Buscar</b-button>
+      </b-col>
+    </b-row>
         <b-table striped hover :items="listaConvidados" :fields="fields">
           <template v-slot:cell(acoes)="row">
             <b-btn @click="editar(row.index)" variant="success">Editar</b-btn>
-            <b-btn @click="confirmarRemocao(row.index)" variant="outline-danger">Excluir</b-btn>
+            <b-btn @click="confirmarRemocao(row.item)" variant="outline-danger">Excluir</b-btn>
           </template>
         </b-table>
-      </div>
+
+      </b-card>
     </b-container>
 
     <b-modal v-model="exibirModalExclusao" title="Confirmar ação" centered>
@@ -77,9 +108,12 @@
     let app = new Vue({
       el: '#app',
       data: {
+        textoBusca: '',
         exibirModalExclusao: false,
         controleFormEditando: false,
         index: 0,
+        convidadoRemocao: {},
+        convidados: [],
         arrayAlerta: [],
         title: 'Lista de Convidados Vue',
         fields: [
@@ -118,23 +152,26 @@
         salvar() {
           this.validarCampos()
           this.verificarConvidadosRepetidosNaLista()
-          
-          if(this.arrayAlerta.length > 0 && !this.controleFormEditando){
+
+          if (this.arrayAlerta.length > 0 && !this.controleFormEditando) {
             this.exibeAlert = true
             return
           }
-          
+
           if (this.controleFormEditando) {
-            this.listaConvidados.splice(this.index, 1, this.convidado)
+            this.convidados.splice(this.index, 1, this.convidado)
             this.controleFormEditando = false
           } else {
-            this.listaConvidados.push(this.convidado)
+            this.convidados.push(this.convidado)
           }
+
+          this.listaConvidados = JSON.parse(JSON.stringify(this.convidados))
           this.limpar()
 
         },
         limpar() {
           this.convidado = { endereco: {} }
+          this.index = 0
         },
         editar(index) {
           this.index = index
@@ -142,11 +179,17 @@
           this.controleFormEditando = true
         },
         excluir() {
-          this.listaConvidados.splice(this.index, 1)
+          console.log(this.convidados)
+          let indice = this.convidados.findIndex((element) => {
+            return element.email === this.convidadoRemocao.email
+          })
+         
+          this.convidados.splice(indice, 1)
+          this.listaConvidados.splice(indice, 1)
           this.exibirModalExclusao = false
         },
-        confirmarRemocao(index) {
-          this.index = index
+        confirmarRemocao(convidado) {
+          this.convidadoRemocao = convidado
           this.exibirModalExclusao = true
         },
         validarCampos() {
@@ -169,10 +212,15 @@
           }
         },
         verificarConvidadosRepetidosNaLista(){
-          let nomesRepetidosNaLista = this.listaConvidados.filter( element => element.nome === this.convidado.nome)
+          let nomesRepetidosNaLista = this.listaConvidados.filter( element => element.email === this.convidado.email)
           if(nomesRepetidosNaLista.length > 0){
-            this.arrayAlerta.push("Convidado já cadastrado anteriomente") 
+            this.arrayAlerta.push("Email já cadastrado anteriomente") 
           }     
+        },
+        buscar() {
+          this.listaConvidados = this.convidados.filter((element) => {
+            return element.nome.toLowerCase().includes(this.textoBusca.toLowerCase())
+          })
         }
       },
     })
