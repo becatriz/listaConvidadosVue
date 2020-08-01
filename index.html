@@ -51,7 +51,8 @@
             </b-col>
 
             <b-col cols="auto">
-              <b-button class="botaoBuscarCep" @click="buscarCep(convidado.endereco.cep)" variant="primary">Buscar</b-button>
+              <b-button class="botaoBuscarCep" @click="buscarCep" variant="primary">Buscar
+              </b-button>
             </b-col>
 
             <b-col cols="12" lg="3" md="6">
@@ -62,6 +63,12 @@
               </b-form-group>
             </b-col>
 
+            <b-col cols="12" lg="3" md="2">
+              <b-form-group label="Número" label-for="numero">
+                <b-form-input id=numero v-model="convidado.endereco.numero" type="text" required >
+                </b-form-input>
+              </b-form-group>
+            </b-col>
             <b-col cols="12" lg="3" md="6">
               <b-form-group label="Bairro" label-for="bairro">
                 <b-form-input id=bairro v-model="convidado.endereco.bairro" type="text" required placeholder="Ex: Sé">
@@ -136,13 +143,15 @@
 
 
 
-  <script>
+  <script type="module">
+    import { buscarPorCep } from './services/endereco.service.js'
 
     Vue.use(VueMask.VueMaskPlugin)
 
     let app = new Vue({
       el: '#app',
       data: {
+  
         textoBusca: '',
         exibirModalExclusao: false,
         controleFormEditando: false,
@@ -183,6 +192,7 @@
           endereco: {
             cep: '',
             logradouro: '',
+            numero: '',
             bairro: '',
             localidade: '',
             uf: '',
@@ -249,22 +259,23 @@
 
           }
           if (this.convidado.endereco.cep === undefined || this.convidado.endereco.cep === "") {
-  
+
             this.arrayAlerta.push("Preencher CEP")
 
           }
         },
 
-        buscarCep(cep) {
-         
-          if (this.convidado.endereco.cep.length <= 10) {
-            fetch(`https://viacep.com.br/ws/${cep}/json`).then((resposta) => {
-              resposta.json().then((resultado) => {
-                console.log(resultado)
-                this.convidado.endereco = resultado
-              })
-            })
+        async buscarCep() {
+          try {
+            let result = await buscarPorCep(this.convidado.endereco.cep)
+            this.convidado.endereco = result
+          } catch (error) {
+             this.arrayAlerta.push(error.mensagemCliente)
+             this.exibeAlert = true
+             console.log(error.message)
           }
+         
+
         },
 
         verificarConvidadosRepetidosNaLista() {
@@ -284,7 +295,7 @@
     })
   </script>
   <style>
-    .botaoBuscarCep{
+    .botaoBuscarCep {
       margin-top: 30px;
     }
   </style>
