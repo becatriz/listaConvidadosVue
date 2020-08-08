@@ -144,8 +144,8 @@
 
 
   <script type="module">
-    import { buscarPorCep } from './services/endereco.service.js'
-
+    import EnderecoService from './services/endereco.service.js'
+    
     Vue.use(VueMask.VueMaskPlugin)
 
     let app = new Vue({
@@ -266,8 +266,9 @@
         },
 
         async buscarCep() {
+       
           try {
-            let result = await buscarPorCep(this.convidado.endereco.cep)
+            let result = await EnderecoService.buscarPorCep(this.convidado.endereco.cep)
             this.convidado.endereco = result
           } catch (error) {
              this.arrayAlerta.push(error.mensagemCliente)
